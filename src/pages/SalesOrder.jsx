@@ -8,13 +8,11 @@ import {
 import {
   getAllAdditionals,
   insertOrder,
-  getAllMenus,
   getAllMenusActive,
 } from "@/services/itemServices";
 import MenuCard from "@/components/MenuCard";
-import { MinusIcon, PlusIcon, Trash } from "lucide-react";
-
-// ... (imports tetap sama)
+import { Trash } from "lucide-react";
+import Swal from "sweetalert2";
 
 const SalesOrder = () => {
   const [bucket, setBucket] = useState([]);
@@ -22,6 +20,7 @@ const SalesOrder = () => {
   const [additionals, setAdditionals] = useState([]);
   const [customerName, setCustomerName] = useState("");
   const [loading, setLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -68,10 +67,15 @@ const SalesOrder = () => {
     });
   };
 
+  const safePrice = (price) => {
+    const p = Number(price);
+    return isNaN(p) ? 0 : p;
+  };
+
   const totalPrice = bucket.reduce((sum, order) => {
-    const mainPrice = order.qty * Number(order.item.price);
+    const mainPrice = order.qty * safePrice(order.item.price);
     const additionalPrice = order.additionals.reduce(
-      (acc, a) => acc + a.qty * Number(a.price),
+      (acc, a) => acc + a.qty * safePrice(a.price),
       0
     );
     return sum + mainPrice + additionalPrice;
@@ -79,9 +83,22 @@ const SalesOrder = () => {
 
   const handleSaveOrder = async () => {
     if (!customerName || bucket.length === 0) {
-      alert("Nama customer dan item tidak boleh kosong!");
+      Swal.fire("Oops!", "Nama customer dan item tidak boleh kosong!", "warning");
       return;
     }
+
+    const result = await Swal.fire({
+      title: "Simpan Order?",
+      text: "Apakah Anda yakin ingin menyimpan pesanan ini?",
+      icon: "question",
+      showCancelButton: true,
+      confirmButtonText: "Ya, simpan",
+      cancelButtonText: "Batal",
+    });
+
+    if (!result.isConfirmed) return;
+
+    setIsSaving(true);
 
     const payload = {
       order: {
@@ -97,8 +114,8 @@ const SalesOrder = () => {
         itemname: order.item.itemname,
         type: order.item.type,
         qty: order.qty,
-        price: Number(order.item.price),
-        subtotal: order.qty * Number(order.item.price),
+        price: safePrice(order.item.price),
+        subtotal: order.qty * safePrice(order.item.price),
         note: order.note || "",
       });
 
@@ -108,8 +125,8 @@ const SalesOrder = () => {
           itemname: a.itemname,
           type: a.type,
           qty: a.qty,
-          price: Number(a.price),
-          subtotal: a.qty * Number(a.price),
+          price: safePrice(a.price),
+          subtotal: a.qty * safePrice(a.price),
           note: "",
         });
       });
@@ -117,13 +134,14 @@ const SalesOrder = () => {
 
     try {
       const orderId = await insertOrder(payload);
-      console.log("Order saved with ID:", orderId);
-      alert("Order berhasil disimpan!");
+      Swal.fire("Berhasil!", `Order berhasil disimpan.`, "success");
       setCustomerName("");
       setBucket([]);
     } catch (err) {
       console.error("Failed to save order:", err.message);
-      alert("Gagal menyimpan order");
+      Swal.fire("Error", "Gagal menyimpan order", "error");
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -190,7 +208,7 @@ const SalesOrder = () => {
                         </span>
                         <div className="flex items-center gap-2">
                           <span>
-                            {(order.qty * order.item.price).toLocaleString("id-ID")}
+                            {(order.qty * safePrice(order.item.price)).toLocaleString("id-ID")}
                           </span>
                           <Trash
                             onClick={() => handleRemoveFromBucket(idx)}
@@ -211,7 +229,7 @@ const SalesOrder = () => {
                               <span>
                                 {a.qty}x {a.itemname}
                               </span>
-                              <span>Rp{(a.qty * a.price).toLocaleString("id-ID")}</span>
+                              <span>Rp{(a.qty * safePrice(a.price)).toLocaleString("id-ID")}</span>
                             </li>
                           ))}
                         </ul>
@@ -228,9 +246,10 @@ const SalesOrder = () => {
                 </div>
                 <button
                   onClick={handleSaveOrder}
-                  className="bg-yellow w-full p-2 font-poppins rounded-2xl cursor-pointer hover:bg-blue hover:text-white"
+                  className="bg-yellow w-full p-2 font-poppins rounded-2xl cursor-pointer hover:bg-blue hover:text-white disabled:opacity-50"
+                  disabled={isSaving}
                 >
-                  Simpan
+                  {isSaving ? "Menyimpan..." : "Simpan"}
                 </button>
               </>
             )}
