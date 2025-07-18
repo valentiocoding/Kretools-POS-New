@@ -12,6 +12,7 @@ export const AuthProvider = ({ children }) => {
     const checkSession = async () => {
       const { data: { session } } = await supabase.auth.getSession();
        console.log("🔍 Supabase Session Data:", session); // ⬅️ Tambahkan ini
+       
       if (session?.user) {
         setUser(session.user);
         setIsValid(true);

@@ -2,106 +2,120 @@ import React, { useEffect, useState } from "react";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import {
-  getAllItems, addItem, updateItem, deleteItem
-} from "@/services/itemServices";
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from "@/components/ui/select";
 import {
-  Card,
-  CardAction,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card"
+  getAllItems, addItem, updateItem, deleteItem, getAllCategories, countItemsByCategory,
+} from "@/services/itemServices";
+import { Card, CardContent } from "@/components/ui/card";
+import Swal from "sweetalert2";
+
+const defaultForm = {
+  itemname: "",
+  itemcode: "",
+  category: "",
+  price: "",
+  uom: "",
+  status: "Active",
+  type: "menu",
+};
 
 const ItemMasterData = () => {
   const [search, setSearch] = useState("");
   const [items, setItems] = useState([]);
+  const [categories, setCategories] = useState([]);
   const [addOpen, setAddOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
-  const [editItem, setEditItem] = useState(null);
+  const [selectedItem, setSelectedItem] = useState(null);
+  const [form, setForm] = useState(defaultForm);
 
-  const [form, setForm] = useState({
-    itemname: "",
-    itemcode: "",
-    category: "",
-    price: "",
-    uom: "",
-    status: "",
-    type: "",
-  });
-
-  const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
-  };
+  const resetForm = () => setForm(defaultForm);
 
   const fetchItems = async () => {
     try {
-      const data = await getAllItems();
-      setItems(data);
+      const itemsData = await getAllItems();
+      const categoriesData = await getAllCategories();
+      setItems(itemsData);
+      setCategories(categoriesData);
     } catch (error) {
-      console.error("Error fetching items:", error);
+      console.error("Error fetching data:", error);
     }
   };
 
   const handleAdd = async () => {
-  try {
-    const cleanForm = {
-      itemname: form.itemname,
-      itemcode: form.itemcode,
-      category: form.category,
-      price: form.price,
-      uom: form.uom,
-      status: form.status,
-      type: form.type,
-    };
-
-    console.log("🔧 Clean Payload:", cleanForm);
-
-    await addItem(cleanForm);
-
-    setForm({
-      itemname: "",
-      itemcode: "",
-      category: "",
-      price: "",
-      uom: "",
-      status: "",
-      type: "",
-    });
-
-    setAddOpen(false);
-    fetchItems();
-  } catch (error) {
-    console.error("Failed to add item:", error);
-  }
-};
-
+    try {
+      await addItem(form);
+      resetForm();
+      setAddOpen(false);
+      fetchItems();
+    } catch (error) {
+      console.error("Failed to add item:", error);
+    }
+  };
 
   const handleEdit = async () => {
     try {
-      await updateItem(editItem.id, form);
+      await updateItem(selectedItem.id, form);
+      resetForm();
       setEditOpen(false);
+      setSelectedItem(null);
       fetchItems();
     } catch (error) {
       console.error("Failed to update item:", error);
     }
   };
 
-  const handleDelete = async (id) => {
-    if (!confirm("Are you sure you want to delete this item?")) return;
+  const handleDelete = async () => {
+    const result = await Swal.fire({
+      title: "Yakin ingin menghapus?",
+      text: "Item masih digunakan tidak bisa dihapus.",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#d33",
+      cancelButtonColor: "#3085d6",
+      confirmButtonText: "Hapus",
+      cancelButtonText: "Batal",
+    });
+
+    if (!result.isConfirmed) return;
+
     try {
-      await deleteItem(id);
+      await deleteItem(selectedItem.id);
+      setSelectedItem(null);
       fetchItems();
+      Swal.fire("Dihapus!", "Item berhasil dihapus.", "success");
     } catch (error) {
-      console.error("Failed to delete item:", error);
+      if (error?.code === "23503") {
+        Swal.fire("Gagal!", "Item masih digunakan di transaksi lain.", "error");
+      } else {
+        Swal.fire("Error!", "Gagal menghapus item.", "error");
+      }
+    }
+  };
+
+  const handleCategoryChange = async (value) => {
+    const selectedCategory = categories.find((c) => c.category === value);
+    if (!selectedCategory) return;
+
+    try {
+      const count = await countItemsByCategory(value);
+      const nextNumber = String(count + 1).padStart(3, "0");
+      const generatedCode = `${selectedCategory.prefix}-${nextNumber}`;
+
+      setForm({
+        ...form,
+        category: value,
+        itemcode: generatedCode,
+      });
+    } catch (error) {
+      console.error("Failed to generate item code:", error);
     }
   };
 
@@ -116,10 +130,29 @@ const ItemMasterData = () => {
   );
 
   return (
-    <div className="p-6 space-y-4">
-      <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold">Item Master</h1>
-        <Button onClick={() => setAddOpen(true)}>Add Item</Button>
+    <div className="p-6 space-y-4 max-w-screen-xl mx-auto">
+      <div className="flex flex-wrap justify-between items-center gap-2">
+        <h1 className="text-2xl font-bold text-primary">Item Master</h1>
+        <div className="flex gap-2 flex-wrap">
+          <Button onClick={() => { setAddOpen(true); resetForm(); }}>Add</Button>
+          <Button
+            variant="outline"
+            disabled={!selectedItem}
+            onClick={() => {
+              setForm(selectedItem);
+              setEditOpen(true);
+            }}
+          >
+            Edit
+          </Button>
+          <Button
+            variant="destructive"
+            disabled={!selectedItem}
+            onClick={handleDelete}
+          >
+            Delete
+          </Button>
+        </div>
       </div>
 
       <Input
@@ -129,114 +162,129 @@ const ItemMasterData = () => {
         className="w-full max-w-md"
       />
 
-      <Card className="shadow-xl">
-        <CardContent className="overflow-x-auto p-4">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>ID</TableHead>
-                <TableHead>Item Code</TableHead>
-                <TableHead>Item Name</TableHead>
-                <TableHead>Category</TableHead>
-                <TableHead>Price</TableHead>
-                <TableHead>UOM</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Type</TableHead>
-                <TableHead>Action</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredData.map((item) => (
-                <TableRow key={item.id}>
-                  <TableCell>{item.id}</TableCell>
-                  <TableCell>{item.itemcode}</TableCell>
-                  <TableCell>{item.itemname}</TableCell>
-                  <TableCell>{item.category}</TableCell>
-                  <TableCell>Rp{item.price?.toLocaleString()}</TableCell>
-                  <TableCell>{item.uom}</TableCell>
-                  <TableCell>{item.status}</TableCell>
-                  <TableCell>{item.type}</TableCell>
-                  <TableCell>
-                    <div className="flex gap-2">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => {
-                          setEditItem(item);
-                          setForm(item);
-                          setEditOpen(true);
-                        }}
-                      >
-                        Edit
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="destructive"
-                        onClick={() => handleDelete(item.id)}
-                      >
-                        Delete
-                      </Button>
-                    </div>
-                  </TableCell>
+      <Card className="shadow-md">
+        <CardContent className="p-4 overflow-auto">
+          <div className="w-full min-w-[800px]">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>ID</TableHead>
+                  <TableHead>Code</TableHead>
+                  <TableHead>Name</TableHead>
+                  <TableHead>Category</TableHead>
+                  <TableHead>Price</TableHead>
+                  <TableHead>UOM</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Type</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {filteredData.map((item) => (
+                  <TableRow
+                    key={item.id}
+                    onClick={() => setSelectedItem(item)}
+                    className={`cursor-pointer ${selectedItem?.id === item.id ? "bg-muted" : ""}`}
+                  >
+                    <TableCell>{item.id}</TableCell>
+                    <TableCell>{item.itemcode}</TableCell>
+                    <TableCell>{item.itemname}</TableCell>
+                    <TableCell>{item.category}</TableCell>
+                    <TableCell>Rp{Number(item.price).toLocaleString()}</TableCell>
+                    <TableCell>{item.uom}</TableCell>
+                    <TableCell>{item.status}</TableCell>
+                    <TableCell>{item.type}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
         </CardContent>
       </Card>
 
-      {/* Modal Add Item */}
-      <Dialog open={addOpen} onOpenChange={setAddOpen}>
-        <DialogContent>
+      {/* Dialog Form */}
+      <Dialog open={addOpen || editOpen} onOpenChange={(val) => {
+        if (!val) {
+          setAddOpen(false);
+          setEditOpen(false);
+          resetForm();
+        }
+      }}>
+        <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Add Item</DialogTitle>
+            <DialogTitle>{addOpen ? "Add Item" : "Edit Item"}</DialogTitle>
           </DialogHeader>
-          <div className="space-y-2">
-            <Label>Item Name</Label>
-            <Input name="itemname" value={form.itemname} onChange={handleChange} />
-            <Label>Item Code</Label>
-            <Input name="itemcode" value={form.itemcode} onChange={handleChange} />
-            <Label>Category</Label>
-            <Input name="category" value={form.category} onChange={handleChange} />
-            <Label>Price</Label>
-            <Input name="price" type="number" value={form.price} onChange={handleChange} />
-            <Label>UOM</Label>
-            <Input name="uom" value={form.uom} onChange={handleChange} />
-            <Label>Status</Label>
-            <Input name="status" value={form.status} onChange={handleChange} />
-            <Label>Type</Label>
-            <Input name="type" value={form.type} onChange={handleChange} />
+          <div className="grid gap-3">
+            <div className="grid gap-1">
+              <Label>Category</Label>
+              <Select
+                value={form.category}
+                onValueChange={(val) =>
+                  addOpen ? handleCategoryChange(val) : setForm({ ...form, category: val })
+                }
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Select category" />
+                </SelectTrigger>
+                <SelectContent>
+                  {categories.map((cat) => (
+                    <SelectItem key={cat.id} value={cat.category}>
+                      {cat.category}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid gap-1">
+              <Label>Item Code</Label>
+              <Input name="itemcode" value={form.itemcode} readOnly />
+            </div>
+            <div className="grid gap-1">
+              <Label>Item Name</Label>
+              <Input name="itemname" value={form.itemname} onChange={(e) => setForm({ ...form, itemname: e.target.value })} />
+            </div>
+            <div className="grid gap-1">
+              <Label>Price</Label>
+              <Input name="price" type="number" value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} />
+            </div>
+            <div className="grid gap-1">
+              <Label>UOM</Label>
+              <Input name="uom" value={form.uom} onChange={(e) => setForm({ ...form, uom: e.target.value })} />
+            </div>
+            <div className="grid gap-1">
+              <Label>Status</Label>
+              <Select
+                value={form.status}
+                onValueChange={(val) => setForm({ ...form, status: val })}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Select status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Active">Active</SelectItem>
+                  <SelectItem value="Inactive">Inactive</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid gap-1">
+              <Label>Type</Label>
+              <Select
+                value={form.type}
+                onValueChange={(val) => setForm({ ...form, type: val })}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Select type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="menu">menu</SelectItem>
+                  <SelectItem value="additional">additional</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
           <DialogFooter>
-            <Button onClick={handleAdd}>Save</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Modal Edit Item */}
-      <Dialog open={editOpen} onOpenChange={setEditOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Edit Item</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-2">
-            <Label>Item Name</Label>
-            <Input name="itemname" value={form.itemname} onChange={handleChange} />
-            <Label>Item Code</Label>
-            <Input name="itemcode" value={form.itemcode} onChange={handleChange} />
-            <Label>Category</Label>
-            <Input name="category" value={form.category} onChange={handleChange} />
-            <Label>Price</Label>
-            <Input name="price" type="number" value={form.price} onChange={handleChange} />
-            <Label>UOM</Label>
-            <Input name="uom" value={form.uom} onChange={handleChange} />
-            <Label>Status</Label>
-            <Input name="status" value={form.status} onChange={handleChange} />
-            <Label>Type</Label>
-            <Input name="type" value={form.type} onChange={handleChange} />
-          </div>
-          <DialogFooter>
-            <Button onClick={handleEdit}>Update</Button>
+            <Button onClick={addOpen ? handleAdd : handleEdit}>
+              {addOpen ? "Save" : "Update"}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

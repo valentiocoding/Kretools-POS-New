@@ -9,9 +9,12 @@ import {
   getAllAdditionals,
   insertOrder,
   getAllMenus,
+  getAllMenusActive,
 } from "@/services/itemServices";
 import MenuCard from "@/components/MenuCard";
-import { MinusIcon, PlusIcon } from "lucide-react";
+import { MinusIcon, PlusIcon, Trash } from "lucide-react";
+
+// ... (imports tetap sama)
 
 const SalesOrder = () => {
   const [bucket, setBucket] = useState([]);
@@ -24,7 +27,7 @@ const SalesOrder = () => {
     const fetchData = async () => {
       try {
         const [menuData, additionalsData] = await Promise.all([
-          getAllMenus(),
+          getAllMenusActive(),
           getAllAdditionals(),
         ]);
         setItems(menuData);
@@ -39,7 +42,10 @@ const SalesOrder = () => {
     fetchData();
   }, []);
 
-  const categories = [...new Set(items.map((i) => i.category))];
+  const rawCategories = [...new Set(items.map((i) => i.category))];
+  const categories = rawCategories.includes("Main Dish")
+    ? ["Main Dish", ...rawCategories.filter((cat) => cat !== "Main Dish")]
+    : rawCategories;
 
   const handleAddToBucket = (item, qty, selectedAdditionals = [], note = "") => {
     if (qty === 0) return;
@@ -55,12 +61,12 @@ const SalesOrder = () => {
   };
 
   const handleRemoveFromBucket = (index) => {
-    setBucket((prev)=> {
-      const newBucket = [...prev]
-      newBucket.splice(index, 1)
-      return newBucket
-    })
-  }
+    setBucket((prev) => {
+      const newBucket = [...prev];
+      newBucket.splice(index, 1);
+      return newBucket;
+    });
+  };
 
   const totalPrice = bucket.reduce((sum, order) => {
     const mainPrice = order.qty * Number(order.item.price);
@@ -113,7 +119,6 @@ const SalesOrder = () => {
       const orderId = await insertOrder(payload);
       console.log("Order saved with ID:", orderId);
       alert("Order berhasil disimpan!");
-
       setCustomerName("");
       setBucket([]);
     } catch (err) {
@@ -132,19 +137,13 @@ const SalesOrder = () => {
 
   return (
     <div>
-      <h1 className="text-3xl font-bold text-center my-6 font-poppins">
-        Sales Order
-      </h1>
+      <h1 className="text-3xl font-bold text-center my-6 font-poppins">Sales Order</h1>
 
       <main>
         <Tabs defaultValue={categories[0]} className="items-center">
           <TabsList className="w-full md:w-[50%] flex flex-wrap gap-2">
             {categories.map((cat) => (
-              <TabsTrigger
-                key={cat}
-                value={cat}
-                className="whitespace-nowrap"
-              >
+              <TabsTrigger key={cat} value={cat} className="whitespace-nowrap">
                 {cat}
               </TabsTrigger>
             ))}
@@ -185,17 +184,19 @@ const SalesOrder = () => {
                 <ul className="text-sm space-y-2 h-28 scrollbar-hide overflow-y-auto pr-1 border-2 rounded-2xl p-2">
                   {bucket.map((order, idx) => (
                     <li key={idx}>
-                      <div className="flex justify-between">
+                      <div className="flex justify-between items-center">
                         <span>
                           {order.qty}x {order.item.itemname}
                         </span>
-                        
                         <div className="flex items-center gap-2">
-
-                        <span>
-                          {(order.qty * order.item.price).toLocaleString("id-ID")}
-                        </span>
-                        <MinusIcon onClick={handleRemoveFromBucket} className="cursor-pointer"></MinusIcon>
+                          <span>
+                            {(order.qty * order.item.price).toLocaleString("id-ID")}
+                          </span>
+                          <Trash
+                            onClick={() => handleRemoveFromBucket(idx)}
+                            className="cursor-pointer text-red-600"
+                            size={16}
+                          />
                         </div>
                       </div>
                       {order.note && (
@@ -207,7 +208,9 @@ const SalesOrder = () => {
                         <ul className="ml-4 text-xs text-muted-foreground">
                           {order.additionals.map((a, i) => (
                             <li key={i} className="flex justify-between">
-                              <span>{a.qty}x {a.itemname}</span>
+                              <span>
+                                {a.qty}x {a.itemname}
+                              </span>
                               <span>Rp{(a.qty * a.price).toLocaleString("id-ID")}</span>
                             </li>
                           ))}
@@ -217,15 +220,11 @@ const SalesOrder = () => {
                   ))}
                 </ul>
 
-                {/* Tombol hanya muncul kalau bucket ada isinya */}
-                {/* Total */}
-                <div>
-                  <div className="flex justify-between font-semibold">
-                    <span>Total:</span>
-                    <span className="text-lg">
-                      Rp{totalPrice.toLocaleString("id-ID")}
-                    </span>
-                  </div>
+                <div className="flex justify-between font-semibold">
+                  <span>Total:</span>
+                  <span className="text-lg">
+                    Rp{totalPrice.toLocaleString("id-ID")}
+                  </span>
                 </div>
                 <button
                   onClick={handleSaveOrder}

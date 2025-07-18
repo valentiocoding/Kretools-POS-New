@@ -12,6 +12,19 @@ export const getAllMenus = async () => {
   return data;
 }
 
+export const getAllMenusActive = async () => {
+  const { data, error } = await supabase
+    .from("items")
+    .select("*")
+    .eq("type", "menu")
+    .eq("status", "Active")
+    .order("id", { ascending: true });
+
+  if (error) throw error;
+  return data;
+};
+
+
 export const addItem = async (item) => {
   const { error } = await supabase.from("items").insert([item]);
   if (error) throw error;
@@ -28,19 +41,30 @@ export const deleteItem = async (id) => {
 };
 
 
+
+
 export const getAllCategories = async () => {
   const { data, error } = await supabase
-    .from("items")
-    .select("category", { count: "exact", head: false })
-    .neq("category", null)
+    .from("category_list")
+    .select("*")
     .order("category", { ascending: true });
 
   if (error) throw error;
-
-  // Ambil hanya unique category
-  const uniqueCategories = [...new Set(data.map((item) => item.category))];
-  return uniqueCategories;
+  return data;
 };
+
+export const countItemsByCategory = async (category) => {
+  const { count, error } = await supabase
+    .from("items")
+    .select("*", { count: "exact", head: true }) // count items, no data returned
+    .eq("category", category)
+    .eq("type", "menu");
+
+  if (error) throw error;
+  return count ?? 0; // jika count null, kembalikan 0
+};
+
+
 
 
 export const getAllAdditionals = async () => {
@@ -49,6 +73,16 @@ export const getAllAdditionals = async () => {
   return data;
 };
 
+export const getAllAdditionalsAcive = async () => {
+  const { data, error } = await supabase
+  .from("items")
+  .select("*")
+  .eq("type", "additional")
+  .eq("status", "Active")
+  .order("id", { ascending: true });
+  if (error) throw error;
+  return data;
+};
 
 
 export const insertOrder = async (payload) => {
@@ -115,3 +149,5 @@ export const getAllOrders = async () => {
   if (error) throw error;
   return data;
 };
+
+
