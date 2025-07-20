@@ -7,8 +7,8 @@ import {
 } from "@/components/ui/tabs";
 import {
   getAllAdditionals,
-  insertOrder,
   getAllMenusActive,
+  insertOrder,
 } from "@/services/itemServices";
 import MenuCard from "@/components/MenuCard";
 import { Trash } from "lucide-react";
@@ -48,14 +48,12 @@ const SalesOrder = () => {
 
   const handleAddToBucket = (item, qty, selectedAdditionals = [], note = "") => {
     if (qty === 0) return;
-
     const order = {
       item,
       qty,
       additionals: selectedAdditionals.filter((a) => a.qty > 0),
       note,
     };
-
     setBucket((prev) => [...prev, order]);
   };
 
@@ -97,7 +95,6 @@ const SalesOrder = () => {
     });
 
     if (!result.isConfirmed) return;
-
     setIsSaving(true);
 
     const payload = {
@@ -133,7 +130,7 @@ const SalesOrder = () => {
     });
 
     try {
-      const orderId = await insertOrder(payload);
+      await insertOrder(payload);
       Swal.fire("Berhasil!", `Order berhasil disimpan.`, "success");
       setCustomerName("");
       setBucket([]);
@@ -154,108 +151,87 @@ const SalesOrder = () => {
   }
 
   return (
-    <div>
-      <h1 className="text-3xl font-bold text-center my-6 font-poppins">Sales Order</h1>
+    <div className="flex flex-col min-h-screen font-poppins">
+      <header className="text-2xl font-bold text-center py-4 border-b">
+        Sales Order
+      </header>
 
-      <main>
-        <Tabs defaultValue={categories[0]} className="items-center">
-          <TabsList className="w-full md:w-[50%] flex flex-wrap gap-2">
-            {categories.map((cat) => (
-              <TabsTrigger key={cat} value={cat} className="whitespace-nowrap">
-                {cat}
-              </TabsTrigger>
-            ))}
-          </TabsList>
+      <Tabs defaultValue={categories[0]} className="flex-1 flex flex-col">
+        {/* Tab Header */}
+        <TabsList className="overflow-x-auto scrollbar-hide px-2 flex gap-2 border-b py-2">
+          {categories.map((cat) => (
+            <TabsTrigger key={cat} value={cat} className="text-sm px-3 py-1 whitespace-nowrap rounded-full bg-muted hover:bg-muted/60">
+              {cat}
+            </TabsTrigger>
+          ))}
+        </TabsList>
 
-          <div className="overflow-y-auto border-2 rounded-2xl scrollbar-hide h-[60vh] p-2 mt-2">
-            {categories.map((cat) => (
-              <TabsContent key={cat} value={cat} className="p-5 my-2">
-                <MenuCard
-                  items={items.filter((item) => item.category === cat)}
-                  additionals={additionals}
-                  onAddToBucket={handleAddToBucket}
-                />
-              </TabsContent>
-            ))}
-          </div>
+        {/* Menu Area */}
+        <div className="flex-1 overflow-y-auto p-3">
+          {categories.map((cat) => (
+            <TabsContent key={cat} value={cat}>
+              <MenuCard
+                items={items.filter((item) => item.category === cat)}
+                additionals={additionals}
+                onAddToBucket={handleAddToBucket}
+              />
+            </TabsContent>
+          ))}
+        </div>
 
-          <footer className="w-full md:w-[50%] p-2 mt-3 space-y-3">
-            <h2 className="font-semibold text-lg">
-              🧾 Ringkasan Order{" "}
-              {bucket.length !== 0
-                ? `(${bucket.length} item${bucket.length > 1 ? "s" : ""})`
-                : ""}
-            </h2>
+        {/* Sticky Order Summary */}
+        <footer className="sticky bottom-0 bg-white border-t p-4 shadow-inner space-y-2">
+          <input
+            type="text"
+            placeholder="Nama Customer"
+            value={customerName}
+            onChange={(e) => setCustomerName(e.target.value)}
+            className="w-full p-2 border rounded-xl text-sm"
+          />
 
-            <input
-              type="text"
-              placeholder="Nama Customer"
-              value={customerName}
-              onChange={(e) => setCustomerName(e.target.value)}
-              className="w-full p-2 border rounded-xl text-sm"
-            />
-
+          <div className="max-h-40 overflow-y-auto border rounded-xl p-2 space-y-2 scrollbar-hide text-sm">
             {bucket.length === 0 ? (
               <p className="text-muted-foreground text-sm">Belum ada item.</p>
             ) : (
-              <>
-                <ul className="text-sm space-y-2 h-28 scrollbar-hide overflow-y-auto pr-1 border-2 rounded-2xl p-2">
-                  {bucket.map((order, idx) => (
-                    <li key={idx}>
-                      <div className="flex justify-between items-center">
-                        <span>
-                          {order.qty}x {order.item.itemname}
-                        </span>
-                        <div className="flex items-center gap-2">
-                          <span>
-                            {(order.qty * safePrice(order.item.price)).toLocaleString("id-ID")}
-                          </span>
-                          <Trash
-                            onClick={() => handleRemoveFromBucket(idx)}
-                            className="cursor-pointer text-red-600"
-                            size={16}
-                          />
-                        </div>
-                      </div>
-                      {order.note && (
-                        <div className="text-sm text-muted-foreground">
-                          <p>Note: {order.note}</p>
-                        </div>
-                      )}
-                      {order.additionals.length > 0 && (
-                        <ul className="ml-4 text-xs text-muted-foreground">
-                          {order.additionals.map((a, i) => (
-                            <li key={i} className="flex justify-between">
-                              <span>
-                                {a.qty}x {a.itemname}
-                              </span>
-                              <span>Rp{(a.qty * safePrice(a.price)).toLocaleString("id-ID")}</span>
-                            </li>
-                          ))}
-                        </ul>
-                      )}
-                    </li>
-                  ))}
-                </ul>
-
-                <div className="flex justify-between font-semibold">
-                  <span>Total:</span>
-                  <span className="text-lg">
-                    Rp{totalPrice.toLocaleString("id-ID")}
-                  </span>
+              bucket.map((order, idx) => (
+                <div key={idx} className="border-b pb-1">
+                  <div className="flex justify-between">
+                    <span>{order.qty}x {order.item.itemname}</span>
+                    <div className="flex items-center gap-2">
+                      <span>Rp{(order.qty * safePrice(order.item.price)).toLocaleString("id-ID")}</span>
+                      <Trash size={16} className="text-red-500 cursor-pointer" onClick={() => handleRemoveFromBucket(idx)} />
+                    </div>
+                  </div>
+                  {order.note && <p className="text-xs text-muted-foreground mt-0.5">Note: {order.note}</p>}
+                  {order.additionals.length > 0 && (
+                    <ul className="ml-4 text-xs text-muted-foreground">
+                      {order.additionals.map((a, i) => (
+                        <li key={i} className="flex justify-between">
+                          <span>{a.qty}x {a.itemname}</span>
+                          <span>Rp{(a.qty * safePrice(a.price)).toLocaleString("id-ID")}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
                 </div>
-                <button
-                  onClick={handleSaveOrder}
-                  className="bg-yellow w-full p-2 font-poppins rounded-2xl cursor-pointer hover:bg-blue hover:text-white disabled:opacity-50"
-                  disabled={isSaving}
-                >
-                  {isSaving ? "Menyimpan..." : "Simpan"}
-                </button>
-              </>
+              ))
             )}
-          </footer>
-        </Tabs>
-      </main>
+          </div>
+
+          <div className="flex justify-between font-semibold text-base">
+            <span>Total:</span>
+            <span>Rp{totalPrice.toLocaleString("id-ID")}</span>
+          </div>
+
+          <button
+            onClick={handleSaveOrder}
+            className="w-full py-2 rounded-xl bg-yellow text-black font-semibold hover:bg-blue hover:text-white disabled:opacity-50"
+            disabled={isSaving}
+          >
+            {isSaving ? "Menyimpan..." : "Simpan"}
+          </button>
+        </footer>
+      </Tabs>
     </div>
   );
 };
