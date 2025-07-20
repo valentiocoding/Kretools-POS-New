@@ -1,13 +1,22 @@
 import React, { useEffect, useState } from "react";
 import {
-  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
 } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import Swal from "sweetalert2";
 import {
-  getAllItems, getAllCategories, addItem, updateItem, deleteItem,
+  getAllItems,
+  getAllCategories,
+  addItem,
+  updateItem,
+  deleteItem,
   countItemsByCategory,
 } from "@/services/itemServices";
 import ItemFormDialog from "@/components/ItemFormDialog";
@@ -22,7 +31,8 @@ const ItemMasterData = () => {
 
   const fetchData = async () => {
     const [itemsData, catData] = await Promise.all([
-      getAllItems(), getAllCategories(),
+      getAllItems(),
+      getAllCategories(),
     ]);
     setItems(itemsData);
     setCategories(catData);
@@ -60,11 +70,12 @@ const ItemMasterData = () => {
   };
 
   return (
-    <div className="max-w-6xl mx-auto px-4 py-6 space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <h2 className="text-2xl font-bold">Item Master</h2>
-        <div className="flex gap-2 flex-wrap">
+    <div className="max-w-screen-lg mx-auto px-4 py-6 space-y-4 text-sm">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+        <h2 className="text-xl font-semibold">Item Master</h2>
+        <div className="flex flex-wrap gap-2">
           <Button
+            size="sm"
             onClick={() => {
               setEditMode(false);
               setFormOpen(true);
@@ -74,6 +85,7 @@ const ItemMasterData = () => {
             Tambah
           </Button>
           <Button
+            size="sm"
             variant="outline"
             disabled={!selectedItem}
             onClick={() => {
@@ -84,6 +96,7 @@ const ItemMasterData = () => {
             Edit
           </Button>
           <Button
+            size="sm"
             variant="destructive"
             disabled={!selectedItem}
             onClick={handleDelete}
@@ -97,19 +110,19 @@ const ItemMasterData = () => {
         placeholder="Cari kode/nama/kategori item..."
         value={search}
         onChange={(e) => setSearch(e.target.value)}
-        className="max-w-sm"
+        className="max-w-md w-full"
       />
 
-      <Card>
-        <CardContent className="overflow-auto p-0">
-          <div className="min-w-[800px]">
-            <Table>
+      <Card className="overflow-hidden">
+        <CardContent className="p-0">
+          <div className="w-full overflow-auto">
+            <Table className="min-w-[700px] text-sm">
               <TableHeader>
-                <TableRow>
-                  <TableHead>Code</TableHead>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Category</TableHead>
-                  <TableHead>Price</TableHead>
+                <TableRow className="bg-gray-100">
+                  <TableHead>Kode</TableHead>
+                  <TableHead>Nama</TableHead>
+                  <TableHead>Kategori</TableHead>
+                  <TableHead>Harga</TableHead>
                   <TableHead>UOM</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Type</TableHead>
@@ -125,14 +138,16 @@ const ItemMasterData = () => {
                       setFormOpen(true);
                       setSelectedItem(item);
                     }}
-                    className={`cursor-pointer ${
-                      selectedItem?.id === item.id ? "bg-muted" : ""
+                    className={`cursor-pointer transition-colors ${
+                      selectedItem?.id === item.id ? "bg-muted" : "hover:bg-gray-50"
                     }`}
                   >
                     <TableCell>{item.itemcode}</TableCell>
                     <TableCell>{item.itemname}</TableCell>
                     <TableCell>{item.category}</TableCell>
-                    <TableCell>Rp{Number(item.price).toLocaleString()}</TableCell>
+                    <TableCell>
+                      Rp{Number(item.price).toLocaleString("id-ID")}
+                    </TableCell>
                     <TableCell>{item.uom}</TableCell>
                     <TableCell>{item.status}</TableCell>
                     <TableCell>{item.type}</TableCell>
