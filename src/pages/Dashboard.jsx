@@ -107,7 +107,7 @@ const Dashboard = () => {
                   onClick={() => handleDelete(order.id)}
                   className="absolute top-2 right-2 text-red-500 hover:text-red-700"
                 >
-                  <Trash2 size={16} />
+                  <Trash2  size={16} />
                 </button>
 
                 <ul className="mt-2 text-sm text-muted-foreground space-y-1">
