@@ -11,8 +11,8 @@ const Dashboard = () => {
       .then(setOrders)
       .catch(console.error)
       .finally(() => setIsLoading(false));
+    
   }, []);
-
   const totalOrder = orders.length;
   const totalOmzet = orders.reduce((sum, o) => sum + Number(o.total_price), 0);
 
