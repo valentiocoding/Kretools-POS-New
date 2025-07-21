@@ -151,3 +151,7 @@ export const getAllOrders = async () => {
 };
 
 
+export const deleteOrder = async (id) => {
+  const { error } = await supabase.from("orders").delete().eq("id", id);
+  if (error) throw error;
+};
