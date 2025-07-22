@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { loginWithEmail, callHelloWorld } from '../services/auth';
+import { loginWithEmail } from '../services/auth';
 import { useAuth } from '@/Context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import Squares from '../components/Squares';
@@ -28,8 +28,6 @@ const Login = () => {
       alert(`Login gagal: ${error.message}`);
     } else {
       localStorage.setItem('user', JSON.stringify(data.user));
-
-      await callHelloWorld();
       navigate('/');
     }
   };
