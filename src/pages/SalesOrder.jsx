@@ -80,67 +80,102 @@ const SalesOrder = () => {
   }, 0);
 
   const handleSaveOrder = async () => {
-    if (!customerName || bucket.length === 0) {
-      Swal.fire("Oops!", "Nama customer dan item tidak boleh kosong!", "warning");
-      return;
-    }
+  if (!customerName || bucket.length === 0) {
+    Swal.fire("Oops!", "Nama customer dan item tidak boleh kosong!", "warning");
+    return;
+  }
 
-    const result = await Swal.fire({
-      title: "Simpan Order?",
-      text: "Apakah Anda yakin ingin menyimpan pesanan ini?",
-      icon: "question",
-      showCancelButton: true,
-      confirmButtonText: "Ya, simpan",
-      cancelButtonText: "Batal",
-    });
+  const result = await Swal.fire({
+    title: "Simpan Order?",
+    text: "Apakah Anda yakin ingin menyimpan pesanan ini?",
+    icon: "question",
+    showCancelButton: true,
+    confirmButtonText: "Ya, simpan",
+    cancelButtonText: "Batal",
+  });
 
-    if (!result.isConfirmed) return;
-    setIsSaving(true);
+  if (!result.isConfirmed) return;
+  setIsSaving(true);
 
-    const payload = {
-      order: {
-        customer_name: customerName,
-        total_price: totalPrice,
-      },
-      order_details: [],
-    };
-
-    bucket.forEach((order) => {
-      payload.order_details.push({
-        item_id: order.item.id,
-        itemname: order.item.itemname,
-        type: order.item.type,
-        qty: order.qty,
-        price: safePrice(order.item.price),
-        subtotal: order.qty * safePrice(order.item.price),
-        note: order.note || "",
-      });
-
-      order.additionals.forEach((a) => {
-        payload.order_details.push({
-          item_id: a.id,
-          itemname: a.itemname,
-          type: a.type,
-          qty: a.qty,
-          price: safePrice(a.price),
-          subtotal: a.qty * safePrice(a.price),
-          note: "",
-        });
-      });
-    });
-
-    try {
-      await insertOrder(payload);
-      Swal.fire("Berhasil!", `Order berhasil disimpan.`, "success");
-      setCustomerName("");
-      setBucket([]);
-    } catch (err) {
-      console.error("Failed to save order:", err.message);
-      Swal.fire("Error", "Gagal menyimpan order", "error");
-    } finally {
-      setIsSaving(false);
-    }
+  const payload = {
+    order: {
+      customer_name: customerName,
+      total_price: totalPrice,
+    },
+    order_details: [],
   };
+
+  bucket.forEach((order) => {
+    payload.order_details.push({
+      item_id: order.item.id,
+      itemname: order.item.itemname,
+      type: order.item.type,
+      qty: order.qty,
+      price: safePrice(order.item.price),
+      subtotal: order.qty * safePrice(order.item.price),
+      note: order.note || "",
+    });
+
+    order.additionals.forEach((a) => {
+      payload.order_details.push({
+        item_id: a.id,
+        itemname: a.itemname,
+        type: a.type,
+        qty: a.qty,
+        price: safePrice(a.price),
+        subtotal: a.qty * safePrice(a.price),
+        note: "",
+      });
+    });
+  });
+
+  try {
+    // 1. Simpan order ke Supabase
+    const { data: savedOrder, error: saveError } = await insertOrder(payload);
+    if (saveError) throw saveError;
+
+    const orderId = savedOrder.id; // asumsi insertOrder mengembalikan order.id
+
+    // 2. Ambil access token user
+    const { data: sessionData } = await supabase.auth.getSession();
+    const access_token = sessionData?.session?.access_token;
+
+    // 3. Call Edge Function Midtrans
+    const midtransRes = await fetch("https://YOUR-PROJECT.supabase.co/functions/v1/create-transaction", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${access_token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        order_id: orderId,
+        gross_amount: totalPrice,
+        customer_name: customerName,
+      }),
+    });
+
+    const midtransData = await midtransRes.json();
+    if (!midtransRes.ok) throw new Error(midtransData.message || "Gagal membuat transaksi Midtrans");
+
+    const redirect_url = midtransData.redirect_url;
+
+    // 4. Simpan ke order_payments
+    await supabase.from("order_payments").insert({
+      order_id: orderId,
+      midtrans_response: midtransData,
+      redirect_url,
+    });
+
+    // 5. Redirect user ke Midtrans
+    window.location.href = redirect_url;
+
+  } catch (err) {
+    console.error("Gagal proses order + midtrans:", err.message);
+    Swal.fire("Error", err.message || "Gagal proses transaksi", "error");
+  } finally {
+    setIsSaving(false);
+  }
+};
 
   if (loading) {
     return <p className="text-center mt-10">🔄 Loading menu dan tambahan...</p>;
