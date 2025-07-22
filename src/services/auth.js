@@ -27,7 +27,7 @@ export async function callHelloWorld(name) {
   }
 
   try {
-    const res = await fetch("https://norhnvdhmkjjeqmpovlh.functions.supabase.co/hello-world", {
+    const res = await fetch("https://norhnvdhmkjjeqmpovlh.supabase.co/functions/v1/hello-world", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -39,7 +39,7 @@ export async function callHelloWorld(name) {
     const result = await res.json();
     return result.message;
   } catch (err) {
-    console.error("Gagal memanggil Edge Function:", err);
+    console.error("Update Gagal memanggil Edge Function:", err);
     return null;
   }
 }
