@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { loginWithEmail } from '../services/auth';
+import { loginWithEmail, callHelloWorld } from '../services/auth';
 import { useAuth } from '@/Context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import Squares from '../components/Squares';
@@ -31,24 +31,11 @@ const Login = () => {
       return;
     }
 
-    // Simpan user di localStorage
     localStorage.setItem('user', JSON.stringify(data.user));
 
-    // Panggil Edge Function `hello-world`
-    try {
-      const res = await fetch("https://norhnvdhmkjjeqmpovlh.functions.supabase.co/hello-world", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ name: data.user.email || 'User' }),
-      });
-
-      const result = await res.json();
-      console.log("Edge Response:", result.message); // Contoh: "Hello user@example.com!"
-    } catch (err) {
-      console.error("Gagal panggil Edge Function:", err);
-    }
+    // ✅ Panggil Edge Function hello-world setelah login
+    const helloMessage = await callHelloWorld(data.user.email);
+    console.log("Edge Response:", helloMessage);
 
     navigate('/');
   };
