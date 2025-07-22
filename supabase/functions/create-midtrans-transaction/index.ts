@@ -1,9 +1,22 @@
-// supabase/functions/create-midtrans-transaction/index.ts
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
+// ✅ CORS headers
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "http://localhost:5000", // ganti ke https://kretools-pos.netlify.app jika sudah deploy
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type, Authorization",
+};
+
 serve(async (req) => {
+  // ✅ Handle preflight
+  if (req.method === "OPTIONS") {
+    return new Response("OK", { headers: corsHeaders });
+  }
+
   try {
     const body = await req.json();
+
+    console.log("🔍 Received body:", body); // ✅ Debug log
 
     const {
       order_id,
@@ -16,6 +29,7 @@ serve(async (req) => {
     if (!order_id || !gross_amount || !customer_name) {
       return new Response(JSON.stringify({ error: "Missing required fields" }), {
         status: 400,
+        headers: corsHeaders,
       });
     }
 
@@ -23,6 +37,7 @@ serve(async (req) => {
     if (!serverKey) {
       return new Response(JSON.stringify({ error: "Midtrans server key not configured" }), {
         status: 500,
+        headers: corsHeaders,
       });
     }
 
@@ -48,7 +63,7 @@ serve(async (req) => {
         "Content-Type": "application/json",
         Accept: "application/json",
         Authorization:
-          "Basic " + btoa(`${serverKey}:`), // Base64(ServerKey + ":")
+          "Basic " + btoa(`${serverKey}:`),
       },
       body: JSON.stringify(snapBody),
     });
@@ -56,25 +71,31 @@ serve(async (req) => {
     const midtransJson = await midtransRes.json();
 
     if (!midtransRes.ok) {
+      console.error("❌ Midtrans error:", midtransJson);
       return new Response(JSON.stringify({ error: midtransJson }), {
         status: 500,
+        headers: corsHeaders,
       });
     }
+
+    console.log("✅ Midtrans success:", midtransJson);
 
     return new Response(JSON.stringify({
       token: midtransJson.token,
       redirect_url: midtransJson.redirect_url,
     }), {
-      headers: { 
+      status: 200,
+      headers: {
+        ...corsHeaders,
         "Content-Type": "application/json",
-        "Access-Control-Allow-Origin": "https://kretools-pos.netlify.app", // Allow all origins, adjust as needed
-
       },
     });
 
   } catch (err) {
+    console.error("❌ Unexpected error:", err);
     return new Response(JSON.stringify({ error: err.message || "Internal Server Error" }), {
       status: 500,
+      headers: corsHeaders,
     });
   }
 });

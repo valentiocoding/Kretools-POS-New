@@ -86,32 +86,43 @@ export const getAllAdditionalsAcive = async () => {
 
 
 export const insertOrder = async (payload) => {
-  const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
-  const access_token = sessionData?.session?.access_token;
+  const { order, order_details } = payload;
 
-  if (!access_token) throw new Error("User not authenticated");
+  const user = supabase.auth.getUser ? (await supabase.auth.getUser()).data.user : null;
+  if (!user) throw new Error("User not authenticated");
 
-  const res = await fetch(
-    `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-midtrans-transaction`,
-    {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${access_token}`,
-        "Content-Type": "application/json",
+  // 1. Simpan order header
+  const { data: orderData, error: orderError } = await supabase
+    .from("orders")
+    .insert([
+      {
+        customer_name: order.customer_name,
+        total_price: order.total_price,
+        user_id: user.id,
       },
-      body: JSON.stringify(payload),
-    }
-  );
+    ])
+    .select()
+    .single();
 
-  if (!res.ok) {
-    const errText = await res.text();
-    throw new Error("Gagal proses order + midtrans: " + errText);
-  }
+  if (orderError) throw orderError;
 
-  const result = await res.json();
-  return result; // berisi redirect_url, snap_token, dsb
+  const orderId = orderData.id;
+
+  // 2. Siapkan data detail
+  const detailsToInsert = order_details.map((detail) => ({
+    ...detail,
+    order_id: orderId,
+  }));
+
+  // 3. Simpan order_details
+  const { error: detailsError } = await supabase
+    .from("order_details")
+    .insert(detailsToInsert);
+
+  if (detailsError) throw detailsError;
+
+  return orderId;
 };
-
 
 
 export const getAllOrders = async () => {
