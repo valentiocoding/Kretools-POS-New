@@ -17,28 +17,3 @@ export async function handleLogout(navigate) {
   localStorage.removeItem("username");
   navigate("/login");
 }
-
-
-
-export async function callHelloWorld() {
-  const session = supabase.auth.getSession();
-
-  const { data, error } = await session;
-  if (error || !data.session) {
-    console.error("Not logged in or session error");
-    return;
-  }
-
-  const accessToken = data.session.access_token;
-
-  // Call Edge Function
-  const res = await fetch("https://norhnvdhmkjjeqmpovlh.functions.supabase.co/hello-world", {
-    method: "GET",
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-    },
-  });
-
-  const text = await res.text();
-  console.log("Function response:", text);
-}
