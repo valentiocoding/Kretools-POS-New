@@ -23,13 +23,34 @@ const Login = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
     const { data, error } = await loginWithEmail(email, password);
+
     if (error) {
       alert(`Login gagal: ${error.message}`);
-    } else {
-      localStorage.setItem('user', JSON.stringify(data.user));
-      navigate('/');
+      return;
     }
+
+    // Simpan user di localStorage
+    localStorage.setItem('user', JSON.stringify(data.user));
+
+    // Panggil Edge Function `hello-world`
+    try {
+      const res = await fetch("https://norhnvdhmkjjeqmpovlh.functions.supabase.co/hello-world", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ name: data.user.email || 'User' }),
+      });
+
+      const result = await res.json();
+      console.log("Edge Response:", result.message); // Contoh: "Hello user@example.com!"
+    } catch (err) {
+      console.error("Gagal panggil Edge Function:", err);
+    }
+
+    navigate('/');
   };
 
   return (
@@ -49,6 +70,7 @@ const Login = () => {
             alt="Logo"
             className="w-32 sm:w-40 mx-auto mb-4"
           />
+
           <div className="font-semibold flex flex-col space-y-4 items-center justify-center text-center">
             <ShinyText text="Login" className="text-xl sm:text-2xl" speed={1} />
 
