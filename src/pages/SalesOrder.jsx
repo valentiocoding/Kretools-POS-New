@@ -115,7 +115,7 @@ const SalesOrder = () => {
     }
 
     // Redirect user ke Snap
-    window.open(midtransData.redirect_url, "_blank");
+    window.location.href = midtransData.redirect_url;
   } catch (err) {
     console.error("❌ Error saat test Midtrans:", err.message);
     Swal.fire("Gagal", err.message || "Gagal test Midtrans", "error");
