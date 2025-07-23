@@ -117,10 +117,7 @@ const SalesOrder = () => {
     // Redirect user ke Snap
     console.log("🔗 Redirecting to Midtrans:", midtransData.redirect_url);
     console.log("🔗 Snap token:", midtransData.token);
-    window.snap.embed(midtransData.token, {
-      embedId: "snap-container",
-
-    })
+    window.snap.pay(midtransData.token)
   } catch (err) {
     console.error("❌ Error saat test Midtrans:", err.message);
     Swal.fire("Gagal", err.message || "Gagal test Midtrans", "error");
@@ -145,7 +142,7 @@ const SalesOrder = () => {
 
     if (!result.isConfirmed) return;
     setIsSaving(true);
-    handleTestMidtrans()
+    
 
     const payload = {
       order: {
@@ -181,6 +178,7 @@ const SalesOrder = () => {
 
     try {
       await insertOrder(payload);
+      handleTestMidtrans()
       Swal.fire("Berhasil!", `Order berhasil disimpan.`, "success");
       setCustomerName("");
       setBucket([]);
@@ -282,6 +280,9 @@ const SalesOrder = () => {
             {isSaving ? "Menyimpan..." : "Simpan"}
           </button>
         </footer>
+
+        <div id="snap-container" className="">
+        </div>
       </Tabs>
     </div>
   );
