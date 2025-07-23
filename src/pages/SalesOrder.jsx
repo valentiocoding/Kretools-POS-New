@@ -80,63 +80,52 @@ const SalesOrder = () => {
     return sum + mainPrice + additionalPrice;
   }, 0);
 
+
   const handleTestMidtrans = async () => {
-    try {
-      const { data: sessionData } = await supabase.auth.getSession();
-      const access_token = sessionData?.session?.access_token;
+  try {
+    const { data: sessionData } = await supabase.auth.getSession();
+    const access_token = sessionData?.session?.access_token;
 
-      if (!access_token) {
-        throw new Error("❌ Token tidak ditemukan. Pastikan user sudah login.");
-      }
-
-      const dummyPayload = {
-        order_id: customerName,
-        gross_amount: totalPrice,
-        customer_name: customerName,
-      };
-
-      const midtransRes = await fetch("https://norhnvdhmkjjeqmpovlh.supabase.co/functions/v1/create-midtrans-transaction", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${access_token}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(dummyPayload),
-      });
-
-      const midtransData = await midtransRes.json();
-
-      if (!midtransRes.ok) {
-        throw new Error(midtransData.message || midtransData.error || "Gagal membuat transaksi Midtrans");
-      }
-
-      // ✅ Show Snap embed popup
-      if (window.snap) {
-        window.snap.pay(midtransData.token, {
-          onSuccess: function (result) {
-            console.log("✅ Success:", result);
-            Swal.fire("Berhasil", "Pembayaran sukses", "success");
-          },
-          onPending: function (result) {
-            console.log("⏳ Pending:", result);
-            Swal.fire("Pending", "Menunggu pembayaran", "info");
-          },
-          onError: function (result) {
-            console.error("❌ Error:", result);
-            Swal.fire("Gagal", "Pembayaran gagal", "error");
-          },
-          onClose: function () {
-            console.log("❌ Dibatalkan oleh user");
-          },
-        });
-      } else {
-        throw new Error("Midtrans snap.js tidak ditemukan di window.");
-      }
-    } catch (err) {
-      console.error("❌ Error saat test Midtrans:", err.message);
-      Swal.fire("Gagal", err.message || "Gagal test Midtrans", "error");
+    if (!access_token) {
+      throw new Error("❌ Token tidak ditemukan. Pastikan user sudah login.");
     }
-  };
+
+    const dummyPayload = {
+      order_id: customerName,
+      gross_amount: totalPrice,
+      customer_name: customerName,
+    };
+
+    console.log("🧪 Payload dikirim:", dummyPayload);
+
+    const midtransRes = await fetch("https://norhnvdhmkjjeqmpovlh.supabase.co/functions/v1/create-midtrans-transaction", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${access_token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(dummyPayload),
+    });
+
+    const midtransData = await midtransRes.json();
+    console.log("📦 Response dari Midtrans:", midtransData);
+
+    if (!midtransRes.ok) {
+      throw new Error(midtransData.message || midtransData.error || "Gagal membuat transaksi Midtrans");
+    }
+
+    // Redirect user ke Snap
+    window.open(midtransData.redirect_url, "_blank");
+    window.snap.embed(midtransData.token, {
+      embedId: "snap-container",
+      
+    })
+  } catch (err) {
+    console.error("❌ Error saat test Midtrans:", err.message);
+    Swal.fire("Gagal", err.message || "Gagal test Midtrans", "error");
+  }
+};
+
 
   const handleSaveOrder = async () => {
     if (!customerName || bucket.length === 0) {
@@ -155,6 +144,7 @@ const SalesOrder = () => {
 
     if (!result.isConfirmed) return;
     setIsSaving(true);
+    handleTestMidtrans()
 
     const payload = {
       order: {
@@ -190,7 +180,7 @@ const SalesOrder = () => {
 
     try {
       await insertOrder(payload);
-      await handleTestMidtrans();
+      Swal.fire("Berhasil!", `Order berhasil disimpan.`, "success");
       setCustomerName("");
       setBucket([]);
     } catch (err) {
@@ -216,6 +206,7 @@ const SalesOrder = () => {
       </header>
 
       <Tabs defaultValue={categories[0]} className="flex-1 flex flex-col">
+        {/* Tab Header */}
         <TabsList className="overflow-x-auto scrollbar-hide px-2 flex gap-2 border-b py-2">
           {categories.map((cat) => (
             <TabsTrigger key={cat} value={cat} className="text-sm px-3 py-1 whitespace-nowrap rounded-full bg-muted hover:bg-muted/60">
@@ -224,6 +215,7 @@ const SalesOrder = () => {
           ))}
         </TabsList>
 
+        {/* Menu Area */}
         <div className="flex-1 overflow-y-auto p-3">
           {categories.map((cat) => (
             <TabsContent key={cat} value={cat}>
@@ -236,6 +228,7 @@ const SalesOrder = () => {
           ))}
         </div>
 
+        {/* Sticky Order Summary */}
         <footer className="sticky bottom-0 bg-white border-t p-4 shadow-inner space-y-2">
           <input
             type="text"
@@ -280,7 +273,8 @@ const SalesOrder = () => {
           </div>
 
           <button
-            onClick={handleSaveOrder}
+            onClick={()=>{handleSaveOrder()
+            }}
             className="w-full py-2 rounded-xl bg-yellow text-black font-semibold hover:bg-blue hover:text-white disabled:opacity-50"
             disabled={isSaving}
           >
