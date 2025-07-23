@@ -115,10 +115,11 @@ const SalesOrder = () => {
     }
 
     // Redirect user ke Snap
-    window.open(midtransData.redirect_url, "_blank");
+    console.log("🔗 Redirecting to Midtrans:", midtransData.redirect_url);
+    console.log("🔗 Snap token:", midtransData.token);
     window.snap.embed(midtransData.token, {
       embedId: "snap-container",
-      
+
     })
   } catch (err) {
     console.error("❌ Error saat test Midtrans:", err.message);
