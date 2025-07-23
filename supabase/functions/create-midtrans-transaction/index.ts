@@ -2,7 +2,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
 // ✅ CORS headers
 const corsHeaders = {
-  "Access-Control-Allow-Origin": "http://localhost:5000", // ganti ke https://kretools-pos.netlify.app jika sudah deploy
+  "Access-Control-Allow-Origin": "https://kretools-pos.netlify.app", // ganti ke https://kretools-pos.netlify.app jika sudah deploy
   "Access-Control-Allow-Methods": "POST, OPTIONS",
   "Access-Control-Allow-Headers": "Content-Type, Authorization",
 };
