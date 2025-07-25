@@ -7,6 +7,7 @@ import ItemMasterData from "@/pages/ItemMaster";
 import Dashboard from "@/pages/Dashboard";
 import POSLayout from "@/components/POSLayout";
 import SalesOrder from "./pages/SalesOrder";
+import QrScanner from "./pages/QrScanner";
 
 function App() {
   return (
@@ -45,6 +46,15 @@ function App() {
               path="item"
               element={<ItemMasterData />}
             />
+          </Route>
+          <Route
+          path="/scanner"
+          element={
+            <PrivateRoute>
+
+              <QrScanner />
+            </PrivateRoute>}
+          >
           </Route>
         </Routes>
       </Router>

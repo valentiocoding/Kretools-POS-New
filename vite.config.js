@@ -12,6 +12,11 @@ export default defineConfig({
     host: '0.0.0.0',
     port: 5000,
     strictPort: true,
+    allowedHosts: [
+      'localhost',
+      '127.0.0.1',
+      '6dc83ca0d743.ngrok-free.app'
+    ]
   }
   ,
   plugins: [react(), tailwindcss()
