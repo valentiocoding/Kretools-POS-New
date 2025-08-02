@@ -14,6 +14,7 @@ import MenuCard from "@/components/MenuCard";
 import { Trash } from "lucide-react";
 import Swal from "sweetalert2";
 import { supabase } from "@/lib/supabaseClient";
+import logo from "@/assets/logo.png";
 
 const SalesOrder = () => {
   const [bucket, setBucket] = useState([]);
@@ -178,7 +179,7 @@ const SalesOrder = () => {
 
     try {
       await insertOrder(payload);
-      handleTestMidtrans()
+      // handleTestMidtrans()
       Swal.fire("Berhasil!", `Order berhasil disimpan.`, "success");
       setCustomerName("");
       setBucket([]);
@@ -200,8 +201,9 @@ const SalesOrder = () => {
 
   return (
     <div className="flex flex-col min-h-screen font-poppins">
-      <header className="text-2xl font-bold text-center py-4 border-b">
-        Sales Order
+      <header className="text-2xl flex  flex-col items-center font-bold text-center py-4 border-b">
+        <img src={logo} alt="" width={200} />
+        <span className="font-poppins text-xl">Sales Order</span>
       </header>
 
       <Tabs defaultValue={categories[0]} className="flex-1 flex flex-col">

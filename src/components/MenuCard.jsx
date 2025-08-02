@@ -34,7 +34,7 @@ const MenuCard = ({ items = [], additionals = [], onAddToBucket }) => {
   };
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+    <div className="grid grid-cols-1 gap-4">
       {items.map((item) => {
         const isActive = activeItemId === item.id;
         const itemQty = quantities[item.id] || 0;
@@ -45,7 +45,7 @@ const MenuCard = ({ items = [], additionals = [], onAddToBucket }) => {
             key={item.id}
             onClick={() => toggleActive(item.id)}
             className={`transition-all p-4 border-2 ${
-              isActive ? "border-primary bg-muted/40" : "border-transparent hover:bg-muted/10"
+              isActive ? "border-yellow bg-muted/40" : "border-transparent hover:bg-muted/10"
             } rounded-2xl cursor-pointer shadow-sm`}
           >
             {/* Header */}
@@ -201,7 +201,7 @@ const MenuCard = ({ items = [], additionals = [], onAddToBucket }) => {
                     setNotes((prev) => ({ ...prev, [item.id]: "" }));
                     setActiveItemId(null);
                   }}
-                  className="w-full bg-primary text-white py-2 rounded-md hover:bg-primary/90 text-sm mt-2"
+                  className="w-full bg-yellow text-blue py-2 rounded-md hover:bg-primary/90 text-sm mt-2"
                 >
                   Tambahkan
                 </button>
