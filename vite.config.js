@@ -32,7 +32,7 @@ export default defineConfig({
     VitePWA({
       registerType: 'autoUpdate',
       manifest: {
-        name: 'POS Bakmie',
+        name: 'Kretools',
         short_name: 'Mie Ayam Mamey',
         theme_color: '#ffffff',
         background_color: '#ffffff',
