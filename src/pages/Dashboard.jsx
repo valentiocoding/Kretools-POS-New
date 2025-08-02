@@ -100,7 +100,7 @@ const Dashboard = () => {
 
       {/* Date Picker */}
       <div className="mb-4">
-        <p className="font-poppins">Pilih tanggal disini mamake</p>
+        <p className="font-poppins">Pilih tanggal</p>
         <Popover>
           <PopoverTrigger asChild>
             <Button
