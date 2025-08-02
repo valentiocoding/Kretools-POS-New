@@ -33,7 +33,7 @@ export default defineConfig({
       registerType: 'autoUpdate',
       manifest: {
         name: 'POS Bakmie',
-        short_name: 'BakmiePOS',
+        short_name: 'Mie Ayam Mamey',
         theme_color: '#ffffff',
         background_color: '#ffffff',
         display: 'standalone',

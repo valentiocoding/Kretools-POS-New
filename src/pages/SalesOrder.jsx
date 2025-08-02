@@ -230,7 +230,7 @@ const SalesOrder = () => {
         </div>
 
         {/* Sticky Order Summary */}
-        <footer className="sticky bottom-0 bg-white border-t p-4 shadow-inner space-y-2">
+        <footer className="sticky bottom-0 border-t p-4  shadow-inner space-y-2">
           <input
             type="text"
             placeholder="Nama Customer"
