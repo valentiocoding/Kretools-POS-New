@@ -3,10 +3,22 @@ import Navbar from '../components/Navbar';
 import BounceCards from '../components/BounceCards';
 import logo from '../assets/logo.png';
 import { useNavigate } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+
 
 import { useAuth } from '@/Context/AuthContext';
 
 const Home = () => {
+  // isValid? 
+  const { isValid } = useAuth();
+
+  useEffect(() => {
+    if (isValid) {
+      // Redirect to login if not authenticated
+      navigate('/dashboard');
+    }
+  }, [isValid]); // Run effect when isValid changes
+
   const navigate = useNavigate()
 
 

@@ -16,6 +16,7 @@ export const AuthProvider = ({ children }) => {
       if (session?.user) {
         setUser(session.user);
         setIsValid(true);
+        
       } else {
         setUser(null);
         setIsValid(false);
