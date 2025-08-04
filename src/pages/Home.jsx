@@ -9,6 +9,7 @@ import home4 from "../assets/home4.jpg"
 import home5 from "../assets/home5.jpg"
 import { useNavigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
+import Portofolio from './Portofolio';
 
 
 import { useAuth } from '@/Context/AuthContext';
@@ -81,6 +82,12 @@ const Home = () => {
           </div>
 
         </div>
+      </main>
+
+      {/* Portofolio */}
+      <main>
+
+        <Portofolio/>
       </main>
 
       <footer className="py-6 text-center text-gray-400 text-sm border-t border-gray-200">

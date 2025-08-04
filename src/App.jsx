@@ -19,9 +19,7 @@ function App() {
           <Route
             path="/"
             element={
-              <PrivateRoute>
                 <Home />
-              </PrivateRoute>
             }
           />
           
