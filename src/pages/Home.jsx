@@ -17,12 +17,6 @@ const Home = () => {
   // isValid? 
   const { isValid } = useAuth();
 
-  useEffect(() => {
-    if (isValid) {
-      // Redirect to login if not authenticated
-      navigate('/dashboard');
-    }
-  }, [isValid]); // Run effect when isValid changes
 
   const navigate = useNavigate()
 
