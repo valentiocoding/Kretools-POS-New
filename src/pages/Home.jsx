@@ -14,6 +14,7 @@ import Portofolio from './Portofolio';
 
 import { useAuth } from '@/Context/AuthContext';
 
+
 const Home = () => {
   // isValid? 
   const { isValid } = useAuth();

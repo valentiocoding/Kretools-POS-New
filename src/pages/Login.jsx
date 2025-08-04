@@ -55,7 +55,8 @@ const Login = () => {
           <img
             src={logo}
             alt="Logo"
-            className="w-32 sm:w-40 mx-auto mb-4"
+            className="w-32 sm:w-40 mx-auto mb-4 cursor-pointer"
+            onClick={()=>{navigate("/")}}
           />
 
           <div className="font-semibold flex flex-col space-y-4 items-center justify-center text-center">
@@ -81,7 +82,7 @@ const Login = () => {
               />
               <button
                 type="submit"
-                className="w-full sm:w-[50%] py-2 text-sm sm:text-base text-gray-500 bg-transparent outline-none border shadow-sm rounded-lg active:scale-95 transition"
+                className="w-full sm:w-[50%] py-2 text-sm sm:text-base text-gray-500 bg-transparent outline-none border shadow-sm rounded-lg active:scale-95 transition cursor-pointer"
               >
                 Login
               </button>

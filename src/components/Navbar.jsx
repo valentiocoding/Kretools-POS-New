@@ -2,8 +2,10 @@ import { useState } from 'react';
 import logo from "../assets/logo_noslogan.png";
 import { useNavigate } from 'react-router-dom';
 import { handleLogout } from '@/services/auth';
+import { useAuth } from '@/Context/AuthContext';
 
 export default function Navbar() {
+  const { isValid } = useAuth()
   const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false);
   function handleLogoutClick() {
@@ -38,9 +40,12 @@ export default function Navbar() {
             ))}
           </ul>
           <div className="mt-6 md:mt-0 md:flex md:items-center md:space-x-4 pb-5 md:pb-0">
-            <button onClick={() => handleLogout(navigate)} className="inline-flex items-center gap-x-1 px-4 py-2 text-blue bg-yellow hover:bg-blue hover:text-yellow active:scale-90 rounded-full">
+            {isValid ? ( <button onClick={() => handleLogout(navigate)} className="inline-flex items-center gap-x-1 px-4 py-2 text-blue bg-yellow hover:bg-blue hover:text-yellow active:scale-90 rounded-full">
               Log Out
-            </button>
+            </button>) : (<button onClick={() => navigate("/login")} className="inline-flex items-center gap-x-1 px-4 py-2 text-blue bg-yellow hover:bg-blue hover:text-yellow active:scale-90 rounded-full">
+              Log In
+            </button>)}
+            
           </div>
         </div>
       </div>
